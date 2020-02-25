@@ -10,44 +10,7 @@ using namespace std;
 	int source; 
 	float dist; 
 };*/
-float* deletemin(float* heap, int size)
-{
-	float min_len = (float)INT_MAX; 
-	int min_index = -1; 
-	for(int i = 0; i < size; i++)
-	{
-		if(heap[i] != -1 && heap[i] < min_len)
-		{
-			min_len = heap[i]; 
-			min_index = i; 
-		}
-	}
-	heap[min_index] = -1; 
-	float* ret_val = (float*)malloc(2 * sizeof(float)); 
-	ret_val[0] = min_len; 
-	ret_val[1] = min_index;
-	return ret_val;
-}
-void generate_vertex_locations(float** vertex_locations, int numpoints, int dimension)
-{
-	for(int i = 0; i < numpoints; i++)
-	{
-		for(int j = 0; j < dimension; j++)
-		{
-			vertex_locations[i][j] = ((float)(rand()))/((float)(RAND_MAX)); 
-		}
-	}
-}
-float calculate_distance(float* point1, float* point2, int dimension)
-{
-	float dist = 0; 
-	for(int i = 0; i < dimension; i++)
-	{
-		dist += (point1[i] - point2[i]) * (point1[i] - point2[i]); 
-	}
-	return (float)sqrt(dist); 
-}
-void add_edges_to_matrix_from_coodrinates(float** edges, float** vertex_locations, int numpoints, int dimension)
+/*void add_edges_to_matrix_from_coodrinates(float** edges, float** vertex_locations, int numpoints, int dimension)
 {
 	for(int i = 0; i < numpoints - 1; i++)
 	{
@@ -107,6 +70,86 @@ float prims_shortest_path(float** edges, float* heap, bool* visited, int source,
 		}
 	}
 	return shortest_path_length; 
+}*/
+float* deletemin(float* heap, int size)
+{
+	float min_len = (float)INT_MAX; 
+	int min_index = -1; 
+	for(int i = 0; i < size; i++)
+	{
+		if(heap[i] != -1 && heap[i] < min_len)
+		{
+			min_len = heap[i]; 
+			min_index = i; 
+		}
+	}
+	heap[min_index] = -1; 
+	float* ret_val = (float*)malloc(2 * sizeof(float)); 
+	ret_val[0] = min_len; 
+	ret_val[1] = min_index;
+	return ret_val;
+}
+void generate_vertex_locations(float** vertex_locations, int numpoints, int dimension)
+{
+	for(int i = 0; i < numpoints; i++)
+	{
+		for(int j = 0; j < dimension; j++)
+		{
+			vertex_locations[i][j] = ((float)(rand()))/((float)(RAND_MAX)); 
+		}
+	}
+}
+float calculate_distance(float* point1, float* point2, int dimension)
+{
+	float dist = 0; 
+	for(int i = 0; i < dimension; i++)
+	{
+		dist += (point1[i] - point2[i]) * (point1[i] - point2[i]); 
+	}
+	return (float)sqrt(dist); 
+}
+
+float prims_shortest_path(float** vertex_locations, float* heap, bool* visited, int source, int numpoints, int dimension)
+{
+	int vertex_count = 0;
+	float shortest_path_length = 0; 
+	int current_vertex = source; 
+	visited[source] = true;
+	float* min_arr; 
+	float current_edge; 
+	//Condition of heap being empty is the same as number of vertices added
+	//to MST being == numpoints 
+	while(vertex_count <  numpoints)
+	{
+		if(vertex_count != 0)
+		{
+			min_arr = deletemin(heap, numpoints); 
+			current_vertex = (int)min_arr[1]; 
+			shortest_path_length += min_arr[0]; 
+			visited[current_vertex] = true; 
+			free(min_arr); 
+		}
+		vertex_count++; 
+		for(int i = 0; i < numpoints; i++)
+		{
+			if(i != current_vertex && !visited[i])
+			{
+				if(dimension == 0)
+				{
+					current_edge = ((float)(rand()))/((float)(RAND_MAX));
+				}
+				else
+				{
+					current_edge = calculate_distance(vertex_locations[current_vertex], vertex_locations[i], dimension);
+				}
+				if(heap[i] > current_edge)
+				{
+					heap[i] = current_edge;
+				}
+			}
+		}
+	}
+	return shortest_path_length; 
 }
 int main(int argc, char **argv) 
 {
@@ -119,7 +162,8 @@ int main(int argc, char **argv)
    {
 
    	 srand(time(NULL));
-   	 time_t start_time = time(NULL); 
+   	 const clock_t begin_time = clock();
+
 
    	 //read from command line
      int version = atoi(argv[1]); 
@@ -163,17 +207,13 @@ int main(int argc, char **argv)
      		//generate vertex coordinates
      		generate_vertex_locations(vertex_locations, numpoints, dimension); 
      		//calculate edge lengths and store in matrix
-     		add_edges_to_matrix_from_coodrinates(edges, vertex_locations, numpoints, dimension); 
+     		//add_edges_to_matrix_from_coodrinates(edges, vertex_locations, numpoints, dimension); 
      	}
-     	else //if dimension is 0, this is the case that edge weights are a randomly selected number between 0 and 1
-     	{	
-     		add_edges_to_matrix_random_len(edges, numpoints);
-     	}
-     	avg_mst_length += prims_shortest_path(edges, heap, visited, 0, numpoints);
+     	avg_mst_length += prims_shortest_path(vertex_locations, heap, visited, 0, numpoints, dimension);
      }
      avg_mst_length = avg_mst_length/(float)(numtrials);
      cout << "Average MST Length: " << avg_mst_length << endl;
-     cout << "Time: " << time(NULL) - start_time;
+     cout << "Time: " << float( clock () - begin_time ) /  CLOCKS_PER_SEC << endl;
      
    }
    return 0;
